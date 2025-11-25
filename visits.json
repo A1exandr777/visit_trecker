@@ -1,0 +1,76 @@
+{
+  "total": 12,
+  "by_day": {
+    "2025-11-25": 12
+  },
+  "by_month": {
+    "2025-11": 12
+  },
+  "unique_total": 3,
+  "unique_by_day": {
+    "2025-11-25": {
+      "count": 3,
+      "ips": [
+        "127.0.0.1",
+        "5.135.160.0",
+        "8.8.8.8"
+      ]
+    }
+  },
+  "unique_by_month": {
+    "2025-11": {
+      "count": 3,
+      "ips": [
+        "127.0.0.1",
+        "5.135.160.0",
+        "8.8.8.8"
+      ]
+    }
+  },
+  "unique_ips": [
+    "127.0.0.1",
+    "5.135.160.0",
+    "8.8.8.8"
+  ],
+  "by_year": {
+    "2025": 12
+  },
+  "unique_by_year": {
+    "2025": {
+      "count": 3,
+      "ips": [
+        "127.0.0.1",
+        "5.135.160.0",
+        "8.8.8.8"
+      ]
+    }
+  },
+  "browsers": {
+    "Chrome": 2,
+    "Yandex Browser": 6,
+    "curl": 4
+  },
+  "geo": {
+    "countries": {
+      "Localhost": 8,
+      "France": 2,
+      "United States": 2
+    },
+    "regions": {
+      "Localhost - Localhost": 8,
+      "France - Unknown": 2,
+      "United States - Unknown": 2
+    }
+  },
+  "time_stats": {
+    "by_month_name": {
+      "November": 12
+    },
+    "by_weekday": {
+      "Tuesday": 12
+    },
+    "by_hour": {
+      "10": 12
+    }
+  }
+}
