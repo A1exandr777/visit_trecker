@@ -9,37 +9,30 @@ DATA_FILE = Path("visits.json")
 GEO_DB_FILE = Path("GeoLite2-City.mmdb")
 
 
-# --- Логика загрузки и сохранения данных ---
 
 def load_data():
-    # Расширенная структура данных
     default_data = {
         "total": 0,
         "by_day": {},  # 2023-10-25
         "by_month": {},  # 2023-10
         "by_year": {},  # 2023
 
-        # Уникальные посетители
         "unique_total": 0,
         "unique_by_day": {},
         "unique_by_month": {},
         "unique_by_year": {},
         "unique_ips": [],
 
-        # 1. Статистика по браузерам
         "browsers": {},
-
-        # 2. Статистика по странам и регионам
         "geo": {
             "countries": {},
             "regions": {}
         },
 
-        # 3. Статистика в разрезе времени (агрегированная)
         "time_stats": {
-            "by_month_name": {},  # Январь, Февраль... (сезонность)
-            "by_weekday": {},  # Понедельник, Вторник...
-            "by_hour": {}  # 00, 01, ... 23
+            "by_month_name": {},  
+            "by_weekday": {},  
+            "by_hour": {} 
         }
     }
 
@@ -52,7 +45,6 @@ def load_data():
     else:
         data = {}
 
-    # Рекурсивное объединение словарей, чтобы добавить новые ключи в старый файл
     def deep_update(d, u):
         for k, v in u.items():
             if isinstance(v, dict):
@@ -69,14 +61,10 @@ def save_data(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-# --- Логика обработки данных (Гео, Браузеры, Время) ---
-
 def get_geo_info(ip):
     """Определяет Страну и Регион по IP."""
     country = "Unknown"
     region = "Unknown"
-
-    # Игнорируем локальные адреса
     if ip in ['127.0.0.1', '::1', 'localhost', 'unknown']:
         return "Localhost", "Localhost"
 
@@ -85,11 +73,9 @@ def get_geo_info(ip):
             with geoip2.database.Reader(str(GEO_DB_FILE)) as reader:
                 response = reader.city(ip)
                 country = response.country.name or "Unknown"
-                # Пытаемся достать название региона (штата/области)
                 if response.subdivisions:
                     region = response.subdivisions.most_specific.name
         except Exception:
-            # Ошибки парсинга IP или базы
             pass
 
     return country, region
@@ -100,34 +86,29 @@ def get_browser_info(user_agent_str):
     if not user_agent_str:
         return "Unknown"
     ua = user_agents.parse(user_agent_str)
-    return ua.browser.family  # Например: 'Chrome', 'Mobile Safari'
+    return ua.browser.family 
 
 
 def increment_counters(data, ip: str, user_agent: str):
     now = datetime.now()
 
-    # Базовые форматы
     today = now.strftime('%Y-%m-%d')
     month = now.strftime('%Y-%m')
     year = now.strftime('%Y')
 
-    # Новые форматы для разреза времени
-    month_name = now.strftime('%B')  # Полное название месяца (January)
-    weekday = now.strftime('%A')  # День недели (Monday)
-    hour = now.strftime('%H')  # Час (00-23)
+    month_name = now.strftime('%B') 
+    weekday = now.strftime('%A') 
+    hour = now.strftime('%H') 
 
-    # --- 1. Базовые счетчики ---
     data['total'] = data.get('total', 0) + 1
     data['by_day'][today] = data['by_day'].get(today, 0) + 1
     data['by_month'][month] = data['by_month'].get(month, 0) + 1
     data['by_year'][year] = data['by_year'].get(year, 0) + 1
 
-    # --- 2. Уникальность (IP) ---
     if ip not in data.get('unique_ips', []):
         data['unique_ips'].append(ip)
         data['unique_total'] = data.get('unique_total', 0) + 1
 
-    # Вспомогательная функция для инициализации структур
     def init_unique_struct(dct, key):
         if key not in dct:
             dct[key] = {"count": 0, "ips": []}
@@ -142,43 +123,33 @@ def increment_counters(data, ip: str, user_agent: str):
             container[key]['ips'].append(ip)
             container[key]['count'] += 1
 
-    # --- 3. Статистика по Браузерам ---
     browser = get_browser_info(user_agent)
     data['browsers'][browser] = data['browsers'].get(browser, 0) + 1
 
-    # --- 4. Статистика по Гео ---
     country, region = get_geo_info(ip)
 
-    # Страны
     data['geo']['countries'][country] = data['geo']['countries'].get(country, 0) + 1
 
-    # Регионы (сохраняем как "Страна - Регион" для уникальности)
     full_region = f"{country} - {region}"
     data['geo']['regions'][full_region] = data['geo']['regions'].get(full_region, 0) + 1
 
-    # --- 5. Статистика по Времени (агрегированная) ---
-    # Месяцы (Январь всего)
     data['time_stats']['by_month_name'][month_name] = data['time_stats']['by_month_name'].get(month_name, 0) + 1
-    # Дни недели (Понедельники всего)
+
     data['time_stats']['by_weekday'][weekday] = data['time_stats']['by_weekday'].get(weekday, 0) + 1
-    # Часы (Час пик)
+  
     data['time_stats']['by_hour'][hour] = data['time_stats']['by_hour'].get(hour, 0) + 1
 
     save_data(data)
 
 
 def reset_counters(data):
-    # Полный сброс, возвращаем структуру к дефолтной (через load_data на пустой файл)
-    # Проще всего очистить файл и перезагрузить
-    empty_structure = load_data()  # Получит дефолтную структуру
-    # Обнуляем то, что загрузилось из файла, оставляя ключи
+    empty_structure = load_data() 
     for key in empty_structure:
         if isinstance(empty_structure[key], int):
             empty_structure[key] = 0
         elif isinstance(empty_structure[key], list):
             empty_structure[key] = []
         elif isinstance(empty_structure[key], dict):
-            # Нужно рекурсивно или просто пересоздать. Для простоты:
             if key == "geo":
                 empty_structure[key] = {"countries": {}, "regions": {}}
             elif key == "time_stats":
@@ -195,9 +166,6 @@ def get_client_ip(request: web.Request) -> str:
         return forwarded_for.split(',')[0].strip()
     return request.remote or 'unknown'
 
-
-# --- Обработчики (Handlers) ---
-
 async def index(request: web.Request):
     ip = get_client_ip(request)
     user_agent = request.headers.get('User-Agent', '')
@@ -207,15 +175,13 @@ async def index(request: web.Request):
 
     today = datetime.now().strftime('%Y-%m-%d')
 
-    # Функция для сортировки словаря по значению (топ популярных)
     def get_top(dct, limit=5):
         sorted_items = sorted(dct.items(), key=lambda item: item[1], reverse=True)
         return sorted_items[:limit]
 
-    # Подготовка данных для отображения
     top_browsers = get_top(data['browsers'])
     top_countries = get_top(data['geo']['countries'])
-    top_hours = sorted(data['time_stats']['by_hour'].items())  # Сортируем часы по порядку (00-23)
+    top_hours = sorted(data['time_stats']['by_hour'].items())  
 
     html = f"""
     <html>
@@ -312,5 +278,5 @@ def create_app():
 
 
 if __name__ == '__main__':
-    print("Запуск сервера... Не забудьте про GeoLite2-City.mmdb для работы гео-данных.")
+    print("Запуск сервера...")
     web.run_app(create_app(), host='0.0.0.0', port=8080)
